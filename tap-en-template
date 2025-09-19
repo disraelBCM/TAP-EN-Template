@@ -1,0 +1,1087 @@
+@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
+
+@using ContentModels = Umbraco.Web.PublishedContentModels;
+
+@{
+    Layout = null;
+    bool bShowingRectAd = false;
+    
+    string currentNodeId = Model.Content.Id.ToString();
+	
+    var TAPENInfoNode = Umbraco.Content(currentNodeId);
+    
+    string adNodeId = TAPENInfoNode.GetPropertyValue<string>("usAdNodeId");
+    
+    if ((Request["mode"] != null) && (Request["mode"].ToString().ToUpper() == "INTL"))
+    {
+        adNodeId = TAPENInfoNode.GetPropertyValue<string>("iNTLAdNodeId");
+    }
+    
+    var TAPENAdNode = Umbraco.Content(adNodeId);
+    
+    var section1Items = (List<IPublishedContent>)TAPENInfoNode.GetPropertyValue<IEnumerable<IPublishedContent>>("section1ContentItems");
+    var section2Items = (List<IPublishedContent>)TAPENInfoNode.GetPropertyValue<IEnumerable<IPublishedContent>>("section2ContentItems");
+    var section3Items = (List<IPublishedContent>)TAPENInfoNode.GetPropertyValue<IEnumerable<IPublishedContent>>("section3ContentItems");
+    var section4Items = (List<IPublishedContent>)TAPENInfoNode.GetPropertyValue<IEnumerable<IPublishedContent>>("section4ContentItems");
+    var section5Items = (List<IPublishedContent>)TAPENInfoNode.GetPropertyValue<IEnumerable<IPublishedContent>>("section5ContentItems");
+    var section6Items = (List<IPublishedContent>)TAPENInfoNode.GetPropertyValue<IEnumerable<IPublishedContent>>("section6ContentItems");
+    var section7Items = (List<IPublishedContent>)TAPENInfoNode.GetPropertyValue<IEnumerable<IPublishedContent>>("section7ContentItems");
+    
+    string customLastSectionEndTitle = "";
+    string customLastSectionEndImageUrl = "";
+    string customLastSectionEndLink = "";
+    string customLastSectionEndDesc = "";
+    
+    bool bCustomLastSectionEnable = false;
+    
+    if (TAPENInfoNode.GetPropertyValue<string>("tAPENLastSectionEndEnable") == "True")
+    {
+        bCustomLastSectionEnable = true;
+    }
+    
+    int articleCount = 1;  // For use with generating 2nd ad
+    
+    bool bShowSection1 = false;
+
+    string strShowSection1Email = Umbraco.Content(currentNodeId).GetPropertyValue("showSection1InEmails").ToString();
+   
+    if (strShowSection1Email == "True")
+    {
+        bShowSection1 = true;
+    }
+
+    bool showTodayInOncologyWidget = Umbraco.Content(currentNodeId).GetPropertyValue<bool>("showTodayInOncologyWidget");
+    
+    bool showTrendingInHeader = Umbraco.Content(currentNodeId).GetPropertyValue<bool>("isTrendingInEmail");
+    
+    //@Umbraco.Field("section1HeaderIcon")
+    //Response.Write("Current Node: " + currentNodeId);
+    
+    string section1HeaderIcon = "https://www.ascopost.com" + Umbraco.Media(TAPENInfoNode.GetPropertyValue<string>("section1HeaderIcon")).umbracoFile;
+}
+
+
+
+@functions {
+    public string AdjustURL(string strURL, bool appendTracking)
+    {
+        if (!(strURL.StartsWith("https://") || strURL.StartsWith("http://")))
+        {
+            strURL = "https://www.ascopost.com" + strURL;
+        }
+
+        if (appendTracking)
+        {
+            // Build {{lead.MD5}} without Razor parsing it
+            string token = "{" + "{lead.MD5}" + "}";
+            string tracking = "utm_source=ONC-TAP-EN-${utm-source}&utm_medium=email&md5=" + token;
+
+            if (strURL.Contains("?"))
+            {
+                strURL += "&" + tracking;
+            }
+            else
+            {
+                strURL += "?" + tracking;
+            }
+        }
+
+        return strURL;
+    }
+}
+
+
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=Windows-1252">
+
+<!-- utf-8 works for most cases -->
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Forcing initial-scale shouldn't be necessary -->
+
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+<!-- Use the latest (edge) version of IE rendering engine -->
+
+<title>The ASCO Post</title>
+
+<!-- The title tag shows in email notifications, like Android 4.4. --> 
+
+<meta class="mktoString" id="utm-source" mktoName="UTM Source" default="MMDDYY" mktoModuleScope="false">
+  
+<!-- Please use an inliner tool to convert all CSS to inline as inpage or external CSS is removed by email clients --> 
+
+<!-- important in CSS is used to prevent the styles of currently inline CSS from overriding the ones mentioned in media queries when corresponding screen sizes are encountered --> 
+
+<!-- CSS Reset -->
+
+ <style type="text/css">
+      /* What it does: Remove spaces around the email design added by some email clients. */
+      /* Beware: It can remove the padding / margin and add a background color to the compose a reply window. */
+      html, body {
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100% !important;
+      }
+      /* What it does: Stops email clients resizing small text. */
+      * {
+      -ms-text-size-adjust: 100%;
+      -webkit-text-size-adjust: 100%;
+      }
+      /* What it does: Forces Outlook.com to display emails full width. */
+      .ExternalClass {
+      width: 100%;
+      }
+      /* What is does: Centers email on Android 4.4 */
+      div[style*="margin: 16px 0"] {
+      margin: 0 !important;
+      }
+      /* What it does: Stops Outlook from adding extra spacing to tables. */
+      table, td {
+      mso-table-lspace: 0pt !important;
+      mso-table-rspace: 0pt !important;
+      }
+      /* What it does: Fixes webkit padding issue. Fix for Yahoo mail table alignment bug. Applies table-layout to the first 2 tables then removes for anything nested deeper. */
+      table {
+      border-spacing: 0 !important;
+      border-collapse: collapse !important;
+      table-layout: fixed !important;
+      margin: 0 auto !important;
+      }
+      table table table {
+      table-layout: auto;
+      }
+      /* What it does: Uses a better rendering method when resizing images in IE. */
+      img {
+      -ms-interpolation-mode: bicubic;
+      }
+      /* What it does: Overrides styles added when Yahoo's auto-senses a link. */
+      .yshortcuts a {
+      border-bottom: none !important;
+      }
+      /* What it does: Another work-around for iOS meddling in triggered links. */
+      a[x-apple-data-detectors] {
+      color: inherit !important;
+      }
+    </style>
+    <!-- Progressive Enhancements -->
+    <style type="text/css">
+      /* What it does: Hover styles for buttons */
+      .button-td, .button-a {
+      transition: all 100ms ease-in;
+      }
+      .button-td:hover, .button-a:hover {
+      background: #333333 !important;
+      border-color: #333333 !important;
+      }
+      .footer-width-overide {
+         width: 100%!important; /* Overides Higer Logic footer width – class must be added to Higher Logic */
+     }
+     .ad_spot img{
+    display: block;
+    margin: 0 auto;
+}   
+
+    /* Media Queries */
+    @@media screen and (max-width: 728px) {
+    .mobile-padding {
+    padding-left: 5% !important;
+    padding-right: 5% !important;
+    }
+    .email-container {
+    width: 100% !important;
+    }
+    /* What it does: Forces elements to resize to the full width of their container. Useful for resizing images beyond their max-width. */
+    .fluid, .fluid-centered {
+    max-width: 100% !important;
+    height: auto !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    }
+    /* And center justify these ones. */
+    .fluid-centered {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    }
+    /* What it does: Forces table cells into full-width rows. */
+    .stack-column, .stack-column-center {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    direction: ltr !important;
+    }
+    /* And center justify these ones. */
+    .stack-column-center {
+    text-align: center !important;
+    }
+    /* What it does: Generic utility class for centering. Useful for images, buttons, and nested tables. */
+    .center-on-narrow {
+    text-align: center !important;
+    display: block !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    float: none !important;
+    }
+    table.center-on-narrow {
+    display: inline-block !important;
+    }
+    }
+    /* +++++ ad styles : START  +++++ */
+    .ad-desktop {
+    display: block!important;
+    height: auto!important;
+    }
+    .ad-desktop img {
+    display: block!important;
+    height: auto!important;
+    }
+    .ad-mobile {
+    display: none!important;
+    height: 0!important;
+    }
+    .ad-mobile img {
+    display: none!important;
+    height: 0!important;
+    }
+    /* mobile ad styles */    
+    @@media screen and (max-width: 728px) {
+    .ad-desktop {
+    display: none!important;
+    height: 0!important;
+    }
+    .ad-desktop img {
+    display: none!important;
+    height: auto!important;
+    }
+    .ad-mobile {
+    display: block!important;
+    height: auto!important;
+    }
+    .ad-mobile img {
+    display: block!important;
+    height: auto!important;
+    }
+    .text-wrap-header {
+    display: table-header-group!important;
+    width: 100%!important
+    }
+    .text-wrap-footer {
+    display: table-footer-group!important;
+    width: 100%!important;
+    padding: 10px 0 10px 0!important;
+    }
+    .top-ad {
+    display: block!important;
+    width: 100%!important;
+    padding: 10px 0 30px 0!important;
+    }
+    .table-ad-full-width, .full-width-image a img {
+    width: 100%;
+    }
+    }
+    /* +++++ ad styles : END  +++++ */
+    /* +++++ Hybrid styles : END  +++++ */
+    .section_titles {
+        display: inline;
+        margin: 0px auto 1px auto;
+        font-family: sans-serif, 'Montserrat';
+        font-size: 14px;
+        color: #337ABD;
+        letter-spacing: 0px;
+        font-weight: 600;
+        text-transform: uppercase;
+        text-align: center;
+    }
+    .p-0 {
+        padding: 0!important;
+    }
+    .pb-22 {
+        padding-bottom: 22px!important;
+    }
+    </style>
+
+<!--[if mso]> <style type="text/css"> body, h1, font {font-family: sans-serif, 'Montserrat' !important;}  p, a {font-family: sans-serif, 'Montserrat' , 'Montserrat' !important;}  </style> <![endif]--> 
+
+<!--[if gte mso 9]><xml> <o:OfficeDocumentSettings> <o:AllowPNG/> <o:PixelsPerInch>96</o:PixelsPerInch> </o:OfficeDocumentSettings> </xml><![endif]-->
+
+</head>
+
+<body align="center" bgcolor="#efefef" width="100%" style="margin: 0;" yahoo="yahoo">
+    <table align="center" bgcolor="#efefef" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;">
+        <tr>
+            <td>
+                <center style="width: 100%;">
+                    <table align="center" style="max-width: 728px; width: 100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                            <td style="padding: 10px; text-align: center">
+                                <p style="text-align: center; font-family: sans-serif; font-size: 12px; mso-height-rule: exactly; line-height: 1.4; color: #333333; margin: 0">
+                                    To view this email as a web page, click 
+                                    <a href="{{system.viewAsWebpageLink:default=}}" style="color: steelblue;">here.</a>
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+    
+                    <!-- Leaderboard Ad Top: BEGIN -->
+
+
+                                                        @if (TAPENAdNode.GetPropertyValue("tAPENShowTopLeaderboard").ToString() == "True")
+                                                        {
+                                                            if (TAPENAdNode.GetPropertyValue("tAPENTopLeaderboardUseGAMTag").ToString() == "True")
+                                                            {
+                                                                    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                                        <tr>
+                                                                            <td style="text-align:center; padding: 5px 0 5px 0"><p style="text-align:center; font-family:Arial, sans-serif; font-size:10px; line-height:1; margin: 0 0 0 0; color:#444444; text-transform:uppercase;">Advertisement</p></td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td style="text-align:center; padding: 0 0 5px 0" class="ad-spot ad_spot"><!-- Ad1 728-90 : BEGIN -->
+                                                                            <a href="https://email-ads.azurewebsites.net/api/EmailAds-Click?code=nQH-XpGQjKTcL1dRnmN2BfJTgeIBWPuELRIhiqX06yG0AzFu3MAvuw==&p=56049762/TAP-EN-728x90-1^728x90^1^INSERT_CUSTOM01&c=INSERT_EP_0012" target="_blank">
+                                                                            <img src="https://email-ads.azurewebsites.net/api/EmailAds-Image?code=FSvVaPO-1h9IC1NysWhYmcyzxt0_6a3uzzh--htXBoKPAzFuxEpYIQ==&p=56049762/TAP-EN-728x90-1^728x90^1^INSERT_CUSTOM01^INSERT_MESSAGE_NAME&c=INSERT_EP_0012" style="width: 100%; max-width: 728px; height: auto"></a>
+                                                                            <IMG SRC="https://email-ads.azurewebsites.net/api/EmailAds-Tracker?code=JkaUNMqKU2krCyZrDb_sFRlv6lp6vVLEuYflG_QEtNazAzFuexsOag==&p=56049762/TAP-EN-728x90-1^728x90^1^INSERT_CUSTOM01&c=INSERT_EP_0012" BORDER="0" HEIGHT="1" WIDTH="1">
+                                                                        </td>
+                                                                    </tr>
+                                                                </table>
+                                                            }
+                                                            else
+                                                            {
+                                                                    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                                        <tr>
+                                                                            <td style="text-align:center; padding: 5px 0 5px 0"><p style="text-align:center; font-family:Arial, sans-serif; font-size:10px; line-height:1; margin: 0 0 0 0; color:#444444; text-transform:uppercase;">Advertisement</p></td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td style="text-align:center; padding: 0 0 5px 0" class="ad-spot ad_spot">@Html.Raw(TAPENAdNode.GetPropertyValue("tAPENTopLeaderboard"))</td>
+                                                                    </tr>
+                                                                </table>
+                                                            }
+                                                        } 
+                    <!--  Leaderboard Ad Top: END --> 
+
+                    <!-- Email Body : BEGIN -->
+
+                    <table cellspacing="0" cellpadding="0" border="0" align="center" bgcolor="#ffffff" width="788" class="email-container" style="width: 788px; display: block;">
+                        <tr>
+                            <td style="padding: 30px" class="mobile-padding">
+                                <table class="" cellspacing="0" cellpadding="0" border="0">
+                                    <tr>
+                                        <td style="text-align: center;">
+                                            <table cellspacing="0" cellpadding="0" border="0" width="100%">
+                                                <tr>
+                                                    <td class="container_padding" style="text-align: center;">
+                                                        <table cellspacing="0" cellpadding="0" border="0" width="100%">
+                                                            <tr>
+                                                                <td style=" background: #00457C; padding: 30px 30px 25px 30px; margin: 0px auto; text-align: center;">
+                                                                    <img width="320" style="width: 100%; max-width: 320px;" src="https://ascopost.com/media/14014485/tapenlogo.png">
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td style="padding: 0px 0px 0px 0px;"><hr style="margin: 0px; padding: 0px 0px; background-color: #00457C; height: 1px; border: none;"></td>
+                                                            </tr>
+                                                        </table>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+
+                                    <!-- TAP Logo/Header Section: END --> 
+                                    
+                                    <!-- Highlights Articles: BEGIN -->
+                                    
+                                    <tr>
+                                        <td class="container_padding">
+                                            <table cellpadding="0" cellspacing="0" width="100%" style="min-width: 100%; " class="stylingblock-content-wrapper">
+                                                <tr>
+                                                    <td class="stylingblock-content-wrapper">
+                                                        <table width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#efefef">
+                                                            <tr>
+                                                                <td style="width: 100%; text-align: center; padding: 8px 0px">
+                                                                    <p style="font-family: sans-serif; font-size: 13px; font-weight: 300; color: #00457C; letter-spacing: .5px; line-height: 1.2; margin: 0px 0px; padding: 0px 0px;">
+                                                                        @DateTime.Now.ToString("dddd"), @DateTime.Now.ToString("MMMM") @DateTime.Now.Day, @DateTime.Now.Year
+                                                                    </p>
+                                                                </td>
+                                                            </tr>
+                                                        </table>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Highlights Articles: END -->
+
+                                    <!-- text wrap: START -->
+
+                                    <!-- DMD Welcome Message : START 
+                                    <tr>
+                                        <td><table width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#ffffff">
+                                            <tbody>
+                                                <tr>
+                                                  <td style="padding: 10px 0px 15px 0px; text-align: left; font-family: sans-serif; font-size: 16px; mso-height-rule: exactly; line-height: 1.2; color: #333333; border-bottom: solid 2px lightseagreen"><div style="display: table; text-align: left;">
+                                                      <h2 style="color: #113b61; font-weight: bold; font-size: 16px; text-decoration: none; line-height: 1.2;text-transform: uppercase;text-align: left;margin-bottom: 5px">INTRODUCING THE ASCO POST EVENING NEWS</h2>
+                                                      <span style="color: #333333; font-weight: normal; font-size: 16px; text-decoration: none; line-height: 1.2;text-align: left;">A curated digest to quickly and accurately catch up on breaking news and views from the world of clinical oncology and hematology</span> </div>
+                                                  </td>
+                                                </tr>
+                                            </tbody>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                    DMD Welcome Message : END --> 
+
+                                    <!-- PASTE HYBRID TOP SECTION HERE -->
+                                    
+                                    <!-- Publisher's Note/Special Announcements Section : BEGIN -->
+                                     @if (bShowSection1)
+                                    {
+<tr>
+  <td width="100%" class="container_padding">
+        <table cellpadding="0" cellspacing="0" width="100%" style="background-color: transparent; min-width: 100%; " class="stylingblock-content-wrapper">
+          <tr>
+            <td style="padding: 0px; " class="stylingblock-content-wrapper"> @if (showTrendingInHeader)
+          {
+          <table width="100%" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+              <td background="https://ascopost.com/media/14015782/bg-cells-green-tapen.jpg" bgcolor="lightseagreen" valign="middle" style="text-align: center; background-position: center center !important; background-size: cover !important;">
+                    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+                      <tr align="center">
+                        <td align="center" valign="middle" style="margin: 0 auto; display: inline-block; padding: 30px; font-family: sans-serif; font-size: 18px; color: white; letter-spacing: 2px; font-weight: 700; text-transform: uppercase; text-align: center; line-height: 1; mso-height-rule: exactly;">@TAPENInfoNode.GetPropertyValue("section1HeaderText")</td>
+                      </tr>
+                </table>
+                  </td>
+            </tr>
+              </table>
+          }
+          else
+          {
+          <table width="100%" cellspacing="0" cellpadding="0" border="0">
+                <tr valign="middle">
+                  <td style="margin: 0px auto; padding: 0px; font-family: sans-serif; line-height: 1; mso-height-rule: exactly; border-bottom: solid 2px lightseagreen" valign="middle" align="center">
+                    <table cellspacing="0" cellpadding="0" border="0" align="center">
+                      <tr valign="middle">
+                        <td class="stack-column-center" valign="middle">
+                          <table cellspacing="0" cellpadding="0" border="0" align="center">
+                            <tr valign="middle">
+                              <td style="padding: 8px; text-align: center"><img src="@section1HeaderIcon" style="width: 35px; max-width: 35px;" alt="alt_text" width="35" border="0"></td>
+                            </tr>
+                          </table>
+                        </td>
+                        <td class="stack-column-center" valign="middle">
+                          <table cellspacing="0" cellpadding="0" border="0" align="center">
+                            <tr valign="middle">
+                              <td style="margin: 0px auto; display: inline-block; padding: 8px; font-family: sans-serif; font-size: 18px; color: lightseagreen; letter-spacing: 2px; font-weight: 700; text-transform: uppercase; text-align: center; line-height: 1; mso-height-rule: exactly;">@TAPENInfoNode.GetPropertyValue("section1HeaderText")</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+          } <br>
+          <div style="display: table;"> 
+
+                <!--================= ad X // moves to bottom : START =================--> 
+
+                @if (TAPENAdNode.GetPropertyValue("tAPENShowTopRightRectAd").ToString() == "True") 
+                {
+                if (TAPENAdNode.GetPropertyValue("tAPENTopRightRectUseGAMTag").ToString() == "True")
+                {
+                <table class="table-ad-full-width" cellspacing="0" cellpadding="0" border="0" align="right" style="float: right">
+                  <tr>
+                    <td style="float: right; display: block; text-align: center; margin: 0px auto; padding: 0px 0px 15px 15px;" class="text-wrap-footer ad_spot">
+                      <p style="margin: 0 0 3px 0"><small style="font-size: 10px;font-family:'Helvetica Neue', Helvetica, Arial, 'sans-serif'">ADVERTISEMENT</small></p>
+                        <a href="https://email-ads.azurewebsites.net/api/EmailAds-Click?code=nQH-XpGQjKTcL1dRnmN2BfJTgeIBWPuELRIhiqX06yG0AzFu3MAvuw==&p=56049762/TAP-EN-300x250-1^300x250^2^INSERT_CUSTOM01&c=INSERT_EP_0012" target="_blank"> <img src="https://email-ads.azurewebsites.net/api/EmailAds-Image?code=FSvVaPO-1h9IC1NysWhYmcyzxt0_6a3uzzh--htXBoKPAzFuxEpYIQ==&p=56049762/TAP-EN-300x250-1^300x250^2^INSERT_CUSTOM01^INSERT_MESSAGE_NAME"></a> <IMG SRC="https://email-ads.azurewebsites.net/api/EmailAds-Tracker?code=JkaUNMqKU2krCyZrDb_sFRlv6lp6vVLEuYflG_QEtNazAzFuexsOag==&p=56049762/TAP-EN-300x250-1^300x250^2^INSERT_CUSTOM01&c=INSERT_EP_0012" BORDER="0" HEIGHT="1" WIDTH="1"> </td>
+                    </tr>
+                </table>
+                }
+                else
+                {
+                <table class="table-ad-full-width" cellspacing="0" cellpadding="0" border="0" align="right" style="float: right">
+              <tr>
+                    <td style="float: right; display: block; text-align: center; margin: 0px auto; padding: 0px 0px 15px 15px;" class="text-wrap-footer ad_spot">
+                  <p style="margin: 0 0 3px 0"><small style="font-size: 10px;font-family:'Helvetica Neue', Helvetica, Arial, 'sans-serif'">ADVERTISEMENT</small></p>
+                  @Html.Raw(TAPENAdNode.GetPropertyValue("tAPENTopRightRectAdCode").ToString()) </td>
+                  </tr>
+            </table>
+                }
+                } 
+
+                <!--================= ad X // moves to bottom : END =================--> 
+
+                <!-- Section 1 Start -->
+
+                <div class="text-wrap-header"> @foreach (var item in section1Items.Take(3))
+              {
+
+              if (item.DocumentTypeAlias == "TapArticle")
+
+              {
+              var title = ((IPublishedContent)item).GetPropertyValue("tAPENTitle").ToString();
+
+              if ((title == null) || (title == ""))
+              {
+              title = ((IPublishedContent)item).GetPropertyValue("tapArticleTitle").ToString();
+              }
+
+              var summary = ((IPublishedContent)item).GetPropertyValue("tAPENSummary").ToString();
+
+
+
+              string articleImage = item.GetCropUrl("tAPArticleFeatureImage","EmailThumbnail");
+
+              @Umbraco.RenderMacro("TAPEN_ArticleItem", new {ArticleTitle=Html.Raw(title), ArticleLink=AdjustURL(Html.Raw(item.Url).ToString(), true), ArticleDesc=Html.Raw(umbraco.library.RemoveFirstParagraphTag(summary)), ImageURL=AdjustURL(articleImage, false)})
+
+
+              }
+
+              else if (item.DocumentTypeAlias == "TapVideo")
+
+              {
+              <table width="100%" cellspacing="0" cellpadding="0" border="0">
+                    <tr valign="top">
+                  <td style="padding: 0px;" valign="top" align="center">
+                        <table width="100%" cellspacing="0" cellpadding="0" border="0">
+                      <tr valign="middle">
+                            <td class="stack-column-center" width="28%">
+                          <table cellspacing="0" cellpadding="0" border="0">
+                                <tr>
+                              <td style="padding: 0; text-align: center"> <a href="@AdjustURL(item.Url.ToString(), true)" style="color: #337ABD; text-decoration: none;"> <img src="@AdjustURL(item.GetPropertyValue("tapVideoThumbnailUrl").ToString(), false)" alt="" class="fluid" width="100%" border="0"> </a> </td>
+                            </tr>
+                              </table>
+                        </td>
+                            <td class="stack-column-center" width="4%" height="30"></td>
+                            <td class="stack-column-center" width="68%">
+                          <table cellspacing="0" cellpadding="0" border="0">
+                                <tr>
+                              <td style="font-family: sans-serif; font-size: 15px; mso-height-rule: exactly; line-height: 20px; color: #333333; padding: 0 0 0 0; text-align: left;">
+                                    <h2 style="line-height: 1.2; font-size: 16px; font-family: sans-serif; margin: 0;"> <a href="@AdjustURL(item.Url, true)" style="color: #337ABD; text-decoration: none;">@Html.Raw(umbraco.library.RemoveFirstParagraphTag(item.GetPropertyValue("tAPENDescription").ToString()))</a> </h2>
+                                  </td>
+                            </tr>
+                              </table>
+                        </td>
+                            <td class="stack-column-center" width="5%" height="30"></td>
+                          </tr>
+                    </table>
+                      </td>
+                </tr>
+                  </table>
+              }
+              else if (item.DocumentTypeAlias == "tAPPodcastItem")
+              {
+              <table width="100%" cellspacing="0" cellpadding="0" border="0">
+
+                    <!-- Two Even Columns : BEGIN -->
+
+                    <tr valign="top">
+                  <td style="padding: 0px;" valign="top" align="center">
+                        <table width="100%" cellspacing="0" cellpadding="0" border="0">
+                      <tr valign="middle">
+                            <td class="stack-column-center" width="28%">
+                          <table cellspacing="0" cellpadding="0" border="0">
+                                <tr>
+                              <td style="padding: 0; text-align: center"><a href="@AdjustURL(item.Url.ToString(), true)" style="color: #337ABD; text-decoration: none;"><img src="@AdjustURL(item.GetPropertyValue("podcastImage").ToString(), false)" alt="" class="fluid" width="100%" border="0"></a></td>
+                            </tr>
+                              </table>
+                        </td>
+
+                            <!-- gutter-spacer -->
+
+                            <td class="stack-column-center" width="4%" height="30"></td>
+                            <td class="stack-column-center" width="68%">
+                          <table cellspacing="0" cellpadding="0" border="0">
+                                <tr>
+                              <td style="font-family: sans-serif; font-size: 15px; mso-height-rule: exactly; line-height: 20px; color: #333333; padding: 0 0 0 0; text-align: left;">
+                                    <h2 style="line-height: 1.2; font-size: 16px; font-family: sans-serif; margin: 0;"> <a href="@AdjustURL(item.Url, true)" style="color: #337ABD; text-decoration: none;">@umbraco.library.RemoveFirstParagraphTag(item.GetPropertyValue("tAPENDescription").ToString())</a> </h2>
+
+                                    <!-- Article Title: END --> 
+
+                                    <!-- Article Description: BEGIN --> 
+                                  </td>
+                            </tr>
+                              </table>
+                        </td>
+
+                            <!-- gutter-spacer -->
+
+                            <td class="stack-column-center" width="5%" height="30"></td>
+                          </tr>
+                    </table>
+                      </td>
+                </tr>
+
+                    <!-- Two Even Columns : END -->
+
+                  </table>
+              }
+              }
+
+
+
+              @if (TAPENInfoNode.GetPropertyValue("showSponsorship1").ToString() == "True") 
+              { 
+              <!-- Native Ad : BEGIN --> 
+              @Html.Raw(TAPENInfoNode.GetPropertyValue("sponsorship1Code").ToString()) 
+              <!-- Native Ad : END --> 
+              }
+
+              @if (TAPENInfoNode.GetPropertyValue("showSponsorship2").ToString() == "True")
+              { 
+              <!-- Native Ad : BEGIN --> 
+
+              @Html.Raw(TAPENInfoNode.GetPropertyValue("sponsorship2Code").ToString()) 
+
+              <!-- Native Ad : END --> 
+              } </div>
+                @if (showTodayInOncologyWidget)
+                {
+                <text> @Html.Partial("TAPEN Today in Oncology Widget") </text>
+                }
+
+                @foreach (var item in section1Items.Skip(3)) {
+
+                if (articleCount == 2) {
+
+
+                if (TAPENAdNode.GetPropertyValue("tAPENShowBottomRightRectAd").ToString() == "True") 
+                {
+                bShowingRectAd = true;
+
+                @Html.Raw("
+                <div style=\"display: table;\">");
+
+              if (TAPENAdNode.GetPropertyValue("tAPENBottomRightRectUseGAM").ToString() == "True")
+              {
+              <table class="table-ad-full-width" align="right" border="0" cellpadding="0" cellspacing="0" style="float: right">
+                    <tr>
+                  <td style="float: right; display: block; text-align: center; margin: 0px auto; padding: 0px 0px 15px 15px;" class="top-ad ad_spot">
+                        <p style="margin: 0 0 3px 0"><small style="font-size: 10px;font-family:'Helvetica Neue', Helvetica, Arial, 'sans-serif'">ADVERTISEMENT</small></p>
+                        <a href="https://email-ads.azurewebsites.net/api/EmailAds-Click?code=nQH-XpGQjKTcL1dRnmN2BfJTgeIBWPuELRIhiqX06yG0AzFu3MAvuw==&p=56049762/TAP-EN-300x250-2^300x250^3^INSERT_CUSTOM01&c=INSERT_EP_0012" target="_blank"> <img src="https://email-ads.azurewebsites.net/api/EmailAds-Image?code=FSvVaPO-1h9IC1NysWhYmcyzxt0_6a3uzzh--htXBoKPAzFuxEpYIQ==&p=56049762/TAP-EN-300x250-2^300x250^3^INSERT_CUSTOM01^INSERT_MESSAGE_NAME"></a> <IMG SRC="https://email-ads.azurewebsites.net/api/EmailAds-Tracker?code=JkaUNMqKU2krCyZrDb_sFRlv6lp6vVLEuYflG_QEtNazAzFuexsOag==&p=56049762/TAP-EN-300x250-2^300x250^3^INSERT_CUSTOM01&c=INSERT_EP_0012" BORDER="0" HEIGHT="1" WIDTH="1"> </td>
+                </tr>
+                  </table>
+              }
+              else
+              {
+              <table class="table-ad-full-width" align="right" border="0" cellpadding="0" cellspacing="0" style="float: right">
+                    <tr>
+                  <td style="float: right; display: block; text-align: center; margin: 0px auto; padding: 0px 0px 15px 15px;" class="top-ad ad_spot">
+                        <p style="margin: 0 0 3px 0"><small style="font-size: 10px;font-family:'Helvetica Neue', Helvetica, Arial, 'sans-serif'">ADVERTISEMENT</small></p>
+                        @Html.Raw(TAPENAdNode.GetPropertyValue("tAPENBottomRightRectAdCode").ToString()) </td>
+                </tr>
+                  </table>
+              } 
+              }
+
+              }
+
+              if (item.DocumentTypeAlias == "TapArticle") {
+
+              var title = ((IPublishedContent)item).GetPropertyValue("tAPENTitle").ToString();
+
+              if ((title == null) || (title == ""))
+              {
+              title = ((IPublishedContent)item).GetPropertyValue("tapArticleTitle").ToString();
+              }
+
+              var summary = ((IPublishedContent)item).GetPropertyValue("tAPENSummary").ToString();
+
+              //var articleImage = ((IPublishedContent)item).GetPropertyValue("tAPArticleFeatureImage");  @Umbraco.Field("tAPArticleFeatureImage")
+
+              string articleImage = item.GetCropUrl("tAPArticleFeatureImage","EmailThumbnail");
+
+              @Umbraco.RenderMacro("TAPEN_ArticleItem", new {ArticleTitle=Html.Raw(title), ArticleLink=AdjustURL(Html.Raw(item.Url).ToString(), true), ArticleDesc=Html.Raw(umbraco.library.RemoveFirstParagraphTag(summary)), ImageURL=AdjustURL(articleImage, false)})
+
+
+              }
+              else if (item.DocumentTypeAlias == "TapVideo")
+              {
+              <table width="100%" cellspacing="0" cellpadding="0" border="0">
+
+                    <!-- Two Even Columns : BEGIN -->
+
+                    <tr valign="top">
+                  <td style="padding: 0px;" valign="top" align="center">
+                        <table width="100%" cellspacing="0" cellpadding="0" border="0">
+                      <tr valign="middle">
+                            <td class="stack-column-center" width="28%">
+                          <table cellspacing="0" cellpadding="0" border="0">
+                                <tr>
+                              <td style="padding: 0; text-align: center"> <a href="@AdjustURL(item.Url.ToString(), true)" style="color: #337ABD; text-decoration: none;"> <img src="@AdjustURL(item.GetPropertyValue("tapVideoThumbnailUrl").ToString(), false)" alt="" class="fluid" width="100%" border="0"> </a> </td>
+                            </tr>
+                              </table>
+                        </td>
+
+                            <!-- gutter-spacer -->
+
+                            <td class="stack-column-center" width="4%" height="30"></td>
+                            <td class="stack-column-center" width="68%">
+                          <table cellspacing="0" cellpadding="0" border="0">
+                                <tr>
+                              <td style="font-family: sans-serif; font-size: 15px; mso-height-rule: exactly; line-height: 20px; color: #333333; padding: 0 0 0 0; text-align: left;">
+                                    <h2 style="line-height: 1.2; font-size: 16px; font-family: sans-serif; margin: 0;"> <a href="@AdjustURL(item.Url, true)" style="color: #337ABD; text-decoration: none;">@Html.Raw(umbraco.library.RemoveFirstParagraphTag(item.GetPropertyValue("tAPENDescription").ToString()))</a> </h2>
+                                  </td>
+                            </tr>
+                              </table>
+                        </td>
+                            <td class="stack-column-center" width="5%" height="30"></td>
+                          </tr>
+                    </table>
+                      </td>
+                </tr>
+
+                    <!-- Two Even Columns : END -->
+
+                  </table>
+              }
+              else if (item.DocumentTypeAlias == "tAPPodcastItem")
+              {
+              <table width="100%" cellspacing="0" cellpadding="0" border="0">
+
+                    <!-- Two Even Columns : BEGIN -->
+
+                    <tr valign="top">
+                  <td style="padding: 0px;" valign="top" align="center">
+                        <table width="100%" cellspacing="0" cellpadding="0" border="0">
+                      <tr valign="middle">
+                            <td class="stack-column-center" width="28%">
+                          <table cellspacing="0" cellpadding="0" border="0">
+                                <tr>
+                              <td style="padding: 0; text-align: center"> <a href="@AdjustURL(item.Url, true)" style="color: #337ABD; text-decoration: none;"> <img src="@AdjustURL(item.GetPropertyValue("podcastImage").ToString(), false)" alt="" class="fluid" width="100%" border="0"></a> </td>
+                            </tr>
+                              </table>
+                        </td>
+                            <td class="stack-column-center" width="4%" height="30"></td>
+                            <td class="stack-column-center" width="68%">
+                          <table cellspacing="0" cellpadding="0" border="0">
+                                <tr>
+                              <td style="font-family: sans-serif; font-size: 15px; mso-height-rule: exactly; line-height: 20px; color: #333333; padding: 0 0 0 0; text-align: left;">
+                                    <h2 style="line-height: 1.2; font-size: 16px; font-family: sans-serif; margin: 0;"> <a href="@AdjustURL(item.Url.ToString(), true)" style="color: #337ABD; text-decoration: none;">@umbraco.library.RemoveFirstParagraphTag(item.GetPropertyValue("tAPENDescription").ToString())</a> </h2>
+                                  </td>
+                            </tr>
+                              </table>
+                        </td>
+                            <td class="stack-column-center" width="5%" height="30"></td>
+                          </tr>
+                    </table>
+                      </td>
+                </tr>
+
+                    <!-- Two Even Columns : END -->
+
+                  </table>
+              }
+
+              articleCount++; 
+
+              } 
+
+              @if(bShowingRectAd)
+              {
+              @Html.Raw("</div>
+                ")
+                }
+                else
+                {
+                @Html.Raw("<br>
+                ")
+                } </div>
+        </td>
+          </tr>
+    </table>
+      </td>
+  </tr>
+  } <!-- Section 1 : END --> 
+
+                                    <!-- 2px, Thick Rule: BEGIN -->
+
+<tr>
+    <td class="container_padding">
+        <table cellpadding="0" cellspacing="0" width="100%" style="min-width: 100%; " class="stylingblock-content-wrapper">
+            <tr>
+                <td class="stylingblock-content-wrapper">
+
+                    @if (TAPENAdNode.GetPropertyValue("tAPENShowBottomLeaderboard").ToString() == "True")
+                    {
+
+                        <table width="100%" cellspacing="0" cellpadding="0" border="0" align="center">
+                        <tr>
+                        <td class="full-width-image" style="text-align:center;"><font style="text-align:center; font-family:Arial, sans-serif; font-size:10px; line-height:22px; color:#444444; text-transform:uppercase;">Advertisement</font></td>
+                        </tr>
+                        <tr>
+                        <td class="full-width-image ad_spot" style="text-align:center; padding: 0 0 5px 0"><!-- Ad1 728-90 : BEGIN --> 
+
+                        @if (TAPENAdNode.GetPropertyValue("tAPENBottomLeaderboardUseGAM").ToString() == "True")
+                        {
+                            <a href="https://email-ads.azurewebsites.net/api/EmailAds-Click?code=nQH-XpGQjKTcL1dRnmN2BfJTgeIBWPuELRIhiqX06yG0AzFu3MAvuw==&p=56049762/TAP-EN-728x90-4^728x90^4^INSERT_CUSTOM01&c=INSERT_EP_0012" target="_blank">
+                          <img src="https://email-ads.azurewebsites.net/api/EmailAds-Image?code=FSvVaPO-1h9IC1NysWhYmcyzxt0_6a3uzzh--htXBoKPAzFuxEpYIQ==&p=56049762/TAP-EN-728x90-4^728x90^4^INSERT_CUSTOM01^INSERT_MESSAGE_NAME"></a>
+                          <IMG SRC="https://email-ads.azurewebsites.net/api/EmailAds-Tracker?code=JkaUNMqKU2krCyZrDb_sFRlv6lp6vVLEuYflG_QEtNazAzFuexsOag==&p=56049762/TAP-EN-728x90-4^728x90^4^INSERT_CUSTOM01&c=INSERT_EP_0012" BORDER="0" HEIGHT="1" WIDTH="1"> 
+                        }
+                        else
+                        {
+                            <text>@Html.Raw(TAPENAdNode.GetPropertyValue("tAPENBottomLeaderboard").ToString()) </text>
+                        }
+                        <!-- Ad1 728-90 : END --></td>
+                        </tr>
+                        </table>
+                    } 
+                </td>
+            </tr>
+        </table>
+
+@for (int iSectionCount = 2; iSectionCount <= 7; iSectionCount++)
+{
+string strSectionActiveName = "showSection" + iSectionCount + "InEmails";  // Dynamically generate the section active property name, for example "showSection1InEmails"
+
+if (Umbraco.Content(currentNodeId).GetPropertyValue<string>(strSectionActiveName).ToString() == "True")   
+{
+<text>@Umbraco.RenderMacro("TAPENGAMSection", new {ContentNodeId=currentNodeId, AdNodeId=adNodeId, SectionNumber=iSectionCount})</text>
+}
+}
+
+
+</td>
+
+</tr>
+    
+    
+    
+    <tr>
+    <td class="stylingblock-content-wrapper container_padding" style="padding-top: 40px">
+
+@if (bCustomLastSectionEnable)
+
+{
+
+customLastSectionEndTitle = TAPENInfoNode.GetPropertyValue
+<string>
+("tAPENLastSectionEndTitle");
+
+customLastSectionEndImageUrl = Umbraco.Media(TAPENInfoNode.GetPropertyValue("tAPENLastSectionImage").ToString()).Url;
+
+customLastSectionEndLink = TAPENInfoNode.GetPropertyValue
+<string>
+("tAPENLastSectionEndLink");
+
+customLastSectionEndDesc = TAPENInfoNode.GetPropertyValue
+<string>
+("tAPENLastSectionEndDesc"); 
+
+<!-- 2px, Thick Rule: END -->
+
+<table cellspacing="0" cellpadding="0" border="0" width="100%">
+<tr>
+<td><hr style="border: 0; background-color: crimson; height: 2px; width; 100%; margin: 0"></td>
+</tr>
+</table>
+
+<!-- special section : START -->
+
+<table width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="">
+<tr>
+<td style="padding: 15px 0 30px 0;" dir="ltr" width="100%" valign="top" align="center"><table width="100%" cellspacing="0" cellpadding="0" border="0">
+<tr valign="middle">
+<td style="margin: 0px auto 0px auto; padding: 0px; font-family: sans-serif; line-height: 1; mso-height-rule: exactly;" valign="middle" align="center"><table cellspacing="0" cellpadding="0" border="0" align="center">
+</table></td>
+</tr>
+</table>
+<table width="100%" cellspacing="0" cellpadding="0" border="0" align="center">
+<tr valign="top"> @if (customLastSectionEndImageUrl != "")
+
+{
+<td class="stack-column-center" width="215"><table width="100%" cellspacing="0" cellpadding="0" border="0" align="center">
+<tr valign="top">
+<td dir="ltr" style="padding: 0 0 20px 0;" valign="top"><a href="@AdjustURL(Html.Raw(customLastSectionEndLink).ToString(), true)"><img width="200" style="width:100%; max-width: 200px;" src="@AdjustURL(customLastSectionEndImageUrl, false)" alt="" class="center-on-narrow" border="0"></a></td>
+</tr>
+</table></td>
+}
+<td class="stack-column-center" width=""><table width="100%" cellspacing="0" cellpadding="0" border="0" align="center">
+<tr>
+<td dir="ltr" style="mso-height-rule: exactly; color: #333333; text-align: left; padding: 0px 0 0 0" class="naitive_ad_padding-OFF" valign="top"><h2 style="font-family: sans-serif; line-height: 1.2; font-size: 16px; font-family: sans-serif; margin-top: 0px;"><a href="@AdjustURL(Html.Raw(customLastSectionEndLink).ToString(), true)" style="color: #337ABD; text-decoration: none;"> @Html.Raw(customLastSectionEndTitle)</a> </h2>
+<p style="text-align: left; color: black; line-height: 1.3; font-size: 
+
+16px; font-family: sans-serif; line-height: 1.2; margin: 5px 0px 5px 
+
+0px; font-weight: normal;">@Html.Raw(umbraco.library.RemoveFirstParagraphTag(customLastSectionEndDesc))</p></td>
+</tr>
+</table></td>
+</tr>
+</table>
+<table width="100%" cellspacing="0" cellpadding="0" border="0">
+<tr valign="middle">
+<td style="margin: 0px auto 0px auto; padding: 0px; font-family: sans-serif; line-height: 0; mso-height-rule: exactly; padding: 5px;" valign="middle" align="center">&nbsp;</td>
+</tr>
+</table></td>
+</tr>
+</table>
+} 
+
+<!-- special section : END --> 
+    
+    
+    </td>
+    </tr>
+    
+
+<!-- Featured Article without Image: BEGIN -->
+@*
+<tr>
+<td width="100%" class="container_padding" valign="middle"><table cellpadding="0" cellspacing="0" width="100%" style="min-width: 100%; " class="stylingblock-content-wrapper">
+<tr>
+<td class="stylingblock-content-wrapper"><!--================= ad X // responsive desktop : START =================--> 
+
+@if (TAPENAdNodeUS.GetPropertyValue("showBottomLeaderboard").ToString() == "True")
+
+{
+<table width="100%" cellspacing="0" cellpadding="0" border="0" align="center">
+<tr>
+<td class="full-width-image" style="text-align:center;"><font style="text-align:center; font-family:Arial, sans-serif; font-size:10px; line-height:22px; color:#444444; text-transform:uppercase;">Advertisement</font></td>
+</tr>
+<tr>
+<td class="full-width-image" style="text-align:center;">@Html.Raw(TAPENAdNodeUS.GetPropertyValue("bottomLeaderboardAdCode"))</td>
+</tr>
+</table>
+} 
+
+<!--================= ad X // responsive desktop : END =================--></td>
+</tr>
+</table></td>
+</tr>
+*@
+<!-- Featured Article without Image: END --> 
+
+<!-- 2px, Thick Rule: BEGIN -->
+
+<tr>
+<td class="container_padding"></td>
+</tr>
+
+<!-- 2px, Thick Rule: END --> 
+
+<!-- Feature Article with Image: BEGIN -->
+
+<tr>
+<td width="100%" class="container_padding"></td>
+</tr>
+
+<!-- Feature Article with Image: END --> 
+
+<!-- 2px, Thick Rule: BEGIN -->
+
+<tr>
+<td class="container_padding"></td>
+</tr>
+
+<!-- 2px, Thick Rule: END --> 
+
+<!-- Feature Article with Image: BEGIN -->
+
+<tr>
+<td width="100%" class="container_padding"></td>
+</tr>
+
+<!-- Feature Article with Image: END --> 
+
+<!-- 2px, Thick Rule: BEGIN -->
+
+<tr>
+<td class="container_padding"></td>
+</tr>
+
+<!-- 2px, Thick Rule: END --> 
+
+<!-- Plus Section: BEGIN -->
+
+<tr>
+<td width="100%" class="container_padding"></td>
+</tr>
+
+<!-- Plus Section: END --> 
+
+<!-- 2px, Thick Rule: BEGIN -->
+
+<tr>
+<td class="container_padding"></td>
+</tr>
+
+<!-- 2px, Thick Rule: END --> 
+
+<!-- Final Link Section: BEGIN -->
+
+<tr>
+<td width="100%" class="container_padding" style="padding-top: 20px"><table cellspacing="0" cellpadding="0" border="0" width="100%" style="">
+<tr>
+<td style="width: 100%; text-align: center;  padding-bottom: 25px;  border-bottom: 3px solid #00457C;"><p style="font-family: sans-serif, 'Montserrat'; font-weight: 400; text-transform: uppercase; font-size: 15px; color: #00457C; letter-spacing: 1.2px; line-height: 1.5; margin: 0px;  padding: 12px 0px 5px 0px;">Visit <em>The ASCO Post</em> Online at ASCOPost.com <br>
+Or <br>
+Visit and Follow Us</p>
+<a href="https://twitter.com/ascopost?utm_source=ONC-TAP-EN-${utm-source}&amp;utm_medium=email&amp;md5={{lead.MD5}}" title="Twitter" target="_blank" style="text-decoration: none;"> <img style="width: 22px; display: inline-block; padding: 0px 5px 1px 0px;" src="https://ascopost.com/media/14014491/social_default_twitter_icon.jpg"> </a> <a href="https://www.facebook.com/TheASCOPost?utm_source=ONC-TAP-EN-${utm-source}&amp;utm_medium=email&amp;md5={{lead.MD5}}" title="Facebook" target="_blank" style="text-decoration: none;"> <img style="padding: 0px 5px 0px 5px; width: 24.5px; display: inline-block;" src="https://ascopost.com/media/14014492/social_default_facebook_icon.jpg"></a> <a href="https://www.linkedin.com/company/asco-post/?utm_source=ONC-TAP-EN-${utm-source}&amp;utm_medium=email&amp;md5={{lead.MD5}}" title="LinkedIn" target="_blank" style="text-decoration: none;"> <img style="padding: 0px 0px 0px 5px; width: 24.5px; display: inline-block;" src="https://www.ascopost.com/media/14025535/social_default_linkedin_icon.jpg"></a></td>
+</tr>
+</table></td>
+</tr>
+
+<!-- Final Link Section: END --> 
+
+<!-- Terms and Conditions Text: BEGIN -->
+
+<tr>
+<td width="100%" class="container_padding" style="padding-top: 10px; padding-bottom: 20px;"><table cellpadding="0" cellspacing="0" width="100%" style="min-width: 100%; " class="stylingblock-content-wrapper">
+<tr>
+<td class="stylingblock-content-wrapper"><table width="100%" cellspacing="0" cellpadding="0" bordercolor="" border="0" bgcolor="">
+<tr>
+<td style="font-family:Arial; font-size:13px"><table class="dashedBorder" width="100%" cellspacing="0" cellpadding="10" bgcolor="#FFFFFF" align="center">
+<tr>
+<td><div style="text-align: left;"> <font size="1"><b>Read more at <a href="https://www.ascopost.com/?utm_source=ONC-TAP-EN-${utm-source}&amp;utm_medium=email&amp;md5={{lead.MD5}}" title="www.ASCOPost.com">www.ASCOPost.com</a></b></font></div></td>
+<td><div style="text-align: right;"> <font size="1"><b><a href="https://ascopost.com/Disclosures/the-asco-post-evening-news-terms-and-conditions/?utm_source=ONC-TAP-EN-${utm-source}&amp;utm_medium=email&amp;md5={{lead.MD5}}" title="Terms and Conditions">Terms and Conditions</a></b></font><br>
+&nbsp;</div></td>
+</tr>
+</table>
+<table class="dashedBorder" width="100%" cellspacing="0" cellpadding="10" bgcolor="#FFFFFF" align="center">
+<tr>
+<td><div style="text-align: left;"> <font size="1"><font color="707070"><em>The ASCO Post<sup style="font-size: .45rem">&trade;</sup></em> is published by Conexiant under a license arrangement with the American Society of Clinical Oncology, Inc. (ASCO<sup style="font-size: .45rem">&reg;</sup>). The ideas and opinions expressed in <em>The ASCO Post<sup style="font-size: .45rem">&trade;</sup></em> do not necessarily reflect those of Conexiant or ASCO. The mention of any company, product, service, or therapy should not be construed as an endorsement of any kind. Conexiant and ASCO assume no responsibility for any injury or damage to persons or property arising out of or related to any use of material contained in this publication or to any errors or omissions.</font> </font></div></td>
+</tr>
+</table></td>
+</tr>
+</table>
+<br></td>
+</tr>
+</table></td>
+</tr>
+
+<!-- Terms and Conditions Text: END -->
+
+</table>
+</td>
+
+</tr>
+
+
+<!-- Padding Container : END -->
+
+</table>
+
+<!-- Email Body : END --> 
+
+
+
+<!-- TAPEN HL Email Footer : BEGIN --> 
+<table align="center" style="max-width: 788px; width: 100%" cellpadding="0" cellspacing="0" border="0"> 
+  <tbody> 
+    <tr> 
+      <td style="text-align: center; font-family: 'Helvetica Neue', Helvetica, Arial, 'sans-serif'; font-size: 13px; line-height: 1.3; padding-top: 24px;">You are receiving this email because you have an existing relationship with ASCO. To unsubscribe from The ASCO Post Evening News please click <a href="https://ww1.broadcastmed.com/The-ASCO-Post-Evening-News-Unsubscribe.html?mktemail={{lead.Email Address:default=edit me}}" style="color: steelblue;" target="_blank" data-unsub-link="true">here</a>. Please do not reply to this email. <br> <br> <br> This email was sent by: <br> <br> <strong>The ASCO Post Evening News</strong> <br> 400 N. Ashley Dr. Ste 2600 <br> Tampa, FL 33602</td> 
+    </tr> 
+  </tbody> 
+</table> 
+<!-- TAPEN HL Email Footer : END --> 
+
+
+
+
+</center>
+</td>
+
+</tr>
+
+</table>
+</body>
+<img referrerpolicy="no-referrer-when-downgrade" src="https://matomo.broadcastmed.com/matomo.php?idsite=246&amp;rec=1&amp;action_name=ONC-TAP-EN-${utm-source}&amp;uid={{lead.Email Address}}" style="border:0" alt="">
+</html>
