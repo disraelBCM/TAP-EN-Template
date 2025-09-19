@@ -63,36 +63,32 @@
 
 
 @functions {
-    public string AdjustURL(string strURL, bool appendTracking = true)
+    public string AdjustURL(string strURL, bool appendTracking)
     {
-        if (string.IsNullOrEmpty(strURL))
-            return strURL;
-
-        // Ensure absolute URL
         if (!(strURL.StartsWith("https://") || strURL.StartsWith("http://")))
         {
             strURL = "https://www.ascopost.com" + strURL;
         }
 
-        // 1️⃣ Append mode from current page if present
-        var mode = HttpContext.Current.Request.QueryString["mode"];
-        if (!string.IsNullOrEmpty(mode))
-        {
-            strURL += strURL.Contains("?") ? "&mode=" + mode : "?mode=" + mode;
-        }
-
-        // 2️⃣ Append tracking parameters if requested
         if (appendTracking)
         {
-            string token = "{" + "{lead.MD5}" + "}"; // safe for Razor parsing
+            // Build {{lead.MD5}} without Razor parsing it
+            string token = "{" + "{lead.MD5}" + "}";
             string tracking = "utm_source=ONC-TAP-EN-${utm-source}&utm_medium=email&md5=" + token;
-            strURL += strURL.Contains("?") ? "&" + tracking : "?" + tracking;
+
+            if (strURL.Contains("?"))
+            {
+                strURL += "&" + tracking;
+            }
+            else
+            {
+                strURL += "?" + tracking;
+            }
         }
 
         return strURL;
     }
 }
-
 
 
 <!doctype html>
